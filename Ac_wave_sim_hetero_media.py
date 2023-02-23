@@ -347,7 +347,7 @@ def segy_write(data, shot_number, sourceX, sourceZ, groupX, groupZ, dt, filename
                 segyio.su.tracr: i+1,
                 segyio.su.fldr: shot_number,
                 segyio.su.tracf: i+1,
-                segyio.su.sx: int(np.round(sourceX[0] * np.abs(coordScalar))),
+                segyio.su.sx: round(np.round(sourceX[0] * np.abs(coordScalar))),
                 segyio.su.sy: int(np.round(sourceY[0] * np.abs(coordScalar))),
                 segyio.su.selev: int(np.round(sourceZ[0] * np.abs(elevScalar))),
                 segyio.su.gx: int(np.round(groupX[i] * np.abs(coordScalar))),
@@ -357,7 +357,10 @@ def segy_write(data, shot_number, sourceX, sourceZ, groupX, groupZ, dt, filename
                 segyio.su.scalel: int(elevScalar),
                 segyio.su.scalco: int(coordScalar),
                 segyio.su.iline: int(groupX[i]/dx+1),
-                segyio.su.xline: int(groupY[i]/dy+1)
+                segyio.su.xline: int(groupY[i]/dy+1),
+                segyio.su.cdpx: int((groupX[i]+sourceX[0])/2),
+                segyio.su.cdpy: int((groupY[i]+sourceY[0])/2),
+                segyio.su.offset: int(np.sqrt((sourceX[0]-groupX[i])**2+(sourceY[0]-groupY[i])**2))
             }
             segyfile.trace[i] = data[:, i]
         segyfile.dt = int(dt*1e3)
@@ -430,7 +433,7 @@ space_order = 10 # order of numerical approximation used for calc. partial deriv
 time_order = 2 # order of numerical approximation used for calc. partial derivatives in time
 f0 = 0.015 # peak/dominant frequency in kHz 
 t0 = 0 # simulation start, ms
-tn = 50 # simulation end, ms
+tn = 5000 # simulation end, ms
 
 #-------------------------------------------------------------------------------------#
 # Add source coor.
@@ -528,9 +531,9 @@ for set in range(1):
             info("Nan values : (%s, %s)" %
                 (np.any(np.isnan(trimmed_data.data)), np.any(np.isnan(rec.data))))
 
-            info("Saving simulation cube")
-            np.save(f'Cube_of_shot_{src_coor_save}.npy',trimmed_data)
-            print(f'Simulation cube for shot {src_coor_save} is saved')
+            # info("Saving simulation cube")
+            # np.save(f'Cube_of_shot_{src_coor_save}.npy',trimmed_data)
+            # print(f'Simulation cube for shot {src_coor_save} is saved')
 
             info("Saving a shot records")
             save_rec(rec, shot_number, src_coor_save, rec_coor_save, tn, dt)
