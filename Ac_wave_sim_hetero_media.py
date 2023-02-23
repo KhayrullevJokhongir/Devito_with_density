@@ -488,7 +488,7 @@ s = model.grid.stepping_dim.spacing # ds, time step in time
 simulation_storage = []
 CPU_number = 15
 
-for set in range(1):
+for set in range(10):
     with cf.ProcessPoolExecutor(max_workers=CPU_number) as executor:
         if set == 9:
             for i in range(1+set*13,set*13+16): 
