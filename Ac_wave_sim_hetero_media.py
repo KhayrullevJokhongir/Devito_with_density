@@ -86,7 +86,7 @@ def rec_coor_generator(start, end, width, bin_xline, bin_inline):
     return rec_coor
 
 #######################################################################################
-#---------------------Functions for simulation using devito----------------------------
+#---------------------Functions for wave simulation using devito----------------------------
 #######################################################################################
 # Creates source and receivers for a stencil 
 def src_rec(p, model, src_coor, rec_coor):
@@ -125,7 +125,7 @@ def create_stencil(model, p, v):
 
 #######################################################################################
 # Perfors sSismic Modelling using heterogenious acoustic wave equation.
-def modelling_AWS(model, src_coor, rec_coor):
+def modelling_AWS(model, src_coor, rec_coor, shot_number):
     
     # Create symbols for particle velocity, pressure field, memory variable, source and receivers
     
@@ -147,7 +147,7 @@ def modelling_AWS(model, src_coor, rec_coor):
 
     trimmed_data = p.data[1, nbl:-nbl, nbl: -nbl, nbl: -nbl]
     
-    return trimmed_data, rec, src_coor, rec_coor 
+    return trimmed_data, rec, src_coor, rec_coor, shot_number 
 
 #######################################################################################
 #--------------Functions for simulation using devito have ended------------------------
@@ -321,7 +321,7 @@ def resample(rec, num):
 
 #######################################################################################
 # Segy writer for shot records
-def segy_write(data, sourceX, sourceZ, groupX, groupZ, dt, filename, sourceY=None, groupY=None, elevScalar=-1000, coordScalar=-1000):
+def segy_write(data, shot_number, sourceX, sourceZ, groupX, groupZ, dt, filename, sourceY=None, groupY=None, elevScalar=-1000, coordScalar=-1000):
 
     nt = data.shape[0]
     nsrc = 1
@@ -345,7 +345,7 @@ def segy_write(data, sourceX, sourceZ, groupX, groupZ, dt, filename, sourceY=Non
             segyfile.header[i] = {
                 segyio.su.tracl: i+1,
                 segyio.su.tracr: i+1,
-                segyio.su.fldr: 1,
+                segyio.su.fldr: shot_number,
                 segyio.su.tracf: i+1,
                 segyio.su.sx: int(np.round(sourceX[0] * np.abs(coordScalar))),
                 segyio.su.sy: int(np.round(sourceY[0] * np.abs(coordScalar))),
@@ -355,27 +355,29 @@ def segy_write(data, sourceX, sourceZ, groupX, groupZ, dt, filename, sourceY=Non
                 segyio.su.gelev: int(np.round(groupZ[i] * np.abs(elevScalar))),
                 segyio.su.dt: int(dt*1e3),
                 segyio.su.scalel: int(elevScalar),
-                segyio.su.scalco: int(coordScalar)
+                segyio.su.scalco: int(coordScalar),
+                segyio.su.iline: int(groupX[i]/dx+1),
+                segyio.su.xline: int(groupY[i]/dy+1)
             }
             segyfile.trace[i] = data[:, i]
         segyfile.dt = int(dt*1e3)
 
 #######################################################################################
 # Saves a file written by segy_writer in .segy format
-def save_rec(rec, src_coords, recloc, nt, dt):
+def save_rec(rec, shot_number, src_coords, recloc, nt, dt):
 
     if rec.data.size != 0:
         rec_save, coords = resample(rec, nt)
 
-        segy_write(rec_save,
+        segy_write(rec_save, shot_number,
                    [src_coords[0]],
                    [src_coords[-1]],
-                   coords[:, 0],
-                   coords[:, -1],
+                   recloc[:,0],
+                   recloc[:,-1],
                    dt,  'Shot_'+(f"{src_coords[0]}") +
                    '_'+(f"{src_coords[1]}")+'.segy',
                    sourceY=[src_coords[1]],
-                   groupY=coords[:, 1])
+                   groupY=recloc[:,1],)
 
 
 
@@ -418,7 +420,8 @@ plot_subs_model(model=density_cube, grid_spacing=dx, colorbar_label="Bulk densit
 
 
 #######################################################################################
-# Define parameters for a simulation model
+#---------------------------DEFINE PARAMETRS FOR SIMULATION#---------------------------
+#######################################################################################
 shape = (nptx, npty, nptz) 
 spacing = (dx, dy, dz) # m 
 origin = (0., 0., 0.) # m
@@ -427,7 +430,7 @@ space_order = 10 # order of numerical approximation used for calc. partial deriv
 time_order = 2 # order of numerical approximation used for calc. partial derivatives in time
 f0 = 0.015 # peak/dominant frequency in kHz 
 t0 = 0 # simulation start, ms
-tn = 4500 # simulation end, ms
+tn = 50 # simulation end, ms
 
 #-------------------------------------------------------------------------------------#
 # Add source coor.
@@ -482,31 +485,31 @@ s = model.grid.stepping_dim.spacing # ds, time step in time
 simulation_storage = []
 CPU_number = 15
 
-for set in range(10):
+for set in range(1):
     with cf.ProcessPoolExecutor(max_workers=CPU_number) as executor:
         if set == 9:
-            for i in range(set*13,set*13+16): 
+            for i in range(1+set*13,set*13+16): 
                 src_coor = source_coor_storage[-i]
                 rec_coor = recivers_coor_storage[-i]
                 #######################################################################################
                 #--------------------------SIMULATION TAKES PLACE HERE--------------------------------#
                 #######################################################################################
-                simulation = executor.submit(modelling_AWS, model, src_coor, rec_coor)
+                simulation = executor.submit(modelling_AWS, model, src_coor, rec_coor, shot_number=i)
                 simulation_storage.append(simulation)
         
         else:
-            for i in range(set*13,set*13+13):
+            for i in range(1+set*13,14+set*13):
                 src_coor = source_coor_storage[-i]
                 rec_coor = recivers_coor_storage[-i] 
                 #######################################################################################
                 #--------------------------SIMULATION TAKES PLACE HERE--------------------------------#
                 #######################################################################################
-                simulation = executor.submit(modelling_AWS, model, src_coor, rec_coor)
+                simulation = executor.submit(modelling_AWS, model, src_coor, rec_coor, shot_number=i)
                 simulation_storage.append(simulation)
         
         for simulation in cf.as_completed(simulation_storage):
             
-            trimmed_data, rec, src_coor_save, rec_coor_save = simulation.result()
+            trimmed_data, rec, src_coor_save, rec_coor_save, shot_number = simulation.result()
         
             #######################################################################################
             #--------------------PLOTTING AND SAVING PLOTS TAKE PLACE HERE------------------------#
@@ -530,8 +533,8 @@ for set in range(10):
             print(f'Simulation cube for shot {src_coor_save} is saved')
 
             info("Saving a shot records")
-            save_rec(rec, src_coor_save, rec_coor_save, tn, dt)
-            print(f'Simulation {src_coor_save} is saved')
+            save_rec(rec, shot_number, src_coor_save, rec_coor_save, tn, dt)
+            print(f'Recordings of simulation {src_coor_save} is saved')
 
 # Calculate and print total simulation time
 timer(start, CPU_number)
