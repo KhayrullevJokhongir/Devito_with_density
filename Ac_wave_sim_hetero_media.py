@@ -45,7 +45,7 @@ def read_segy_file(file):
 
 #######################################################################################
 # Creates receiver coordinates used in acquisition
-def rec_coor_generator(start, end, width, bin_xline, bin_inline):
+def coor_generator(start, end, width, bin_xline, bin_inline):
     '''Creates rectangle shaped seismic data recording acqusition geometry'''
     # Note:
     # start - X,Y,Z coordinates(with respect to simulation model) in m where rectange should start
@@ -213,8 +213,8 @@ def plot_subs_model(model, grid_spacing, colorbar_label, cmap, figure_title, fig
 # Receivers recording 2D plotter 
 def plot_receiver(rec, src_coor, rec_coor,visualize, save):
     plt.figure(1)
-    plt.imshow(rec.data, cmap='seismic', aspect='auto', vmax=0.008,
-               vmin=-0.008, extent=(0, rec_coor.shape[0], tn, t0))
+    plt.imshow(rec.data, cmap='seismic', aspect='auto', vmax=0.005,
+               vmin=-0.005, extent=(0, rec_coor.shape[0], tn, t0))
     plt.xlabel("Reciever number")
     plt.ylabel("Time (ms)")
     plt.title('Recordings at '+(f"{tn/1000}")+'s')
@@ -262,7 +262,7 @@ def plot_sim_cube(trimmed_data, dx, dy, dz, src_coor, rec_save, visualize, save)
     # Set a custom position and size of colorbar
     sargs = dict(vertical=False, label_font_size=12, title_font_size=15)
     pl.add_mesh(orth_slices, show_edges=False, line_width=5,
-                cmap='seismic', clim=[-0.008, 0.008], scalar_bar_args=sargs)
+                cmap='seismic', clim=[-0.005, 0.005], scalar_bar_args=sargs)
 
     # Add source
     Point_labels = ['Source']
@@ -295,7 +295,7 @@ def plot_sim_cube(trimmed_data, dx, dy, dz, src_coor, rec_save, visualize, save)
         pl.show()
 
     if save:
-        save_name = 'Wavefield_' + f"{tn/1000}"+'s_shot' + (f"{src_coor[0]}")+'_'+(f"{src_coor[1]}")+'s.png'
+        save_name = 'Wavefield_' + f"{tn/1000}"+'s_shot' + (f"{src_coor[0]}")+'_'+(f"{src_coor[1]}")+'.png'
         pl.show(screenshot=save_name, window_size=[1280, 720])
 
 #######################################################################################
@@ -355,12 +355,12 @@ def segy_write(data, shot_number, sourceX, sourceZ, groupX, groupZ, dt, filename
                 segyio.su.gelev: int(np.round(groupZ[i] * np.abs(elevScalar))),
                 segyio.su.dt: int(dt*1e3),
                 segyio.su.scalel: int(elevScalar),
-                segyio.su.scalco: int(coordScalar),
-                segyio.su.iline: int(groupX[i]/dx+1),
-                segyio.su.xline: int(groupY[i]/dy+1),
-                segyio.su.cdpx: int((groupX[i]+sourceX[0])/2),
-                segyio.su.cdpy: int((groupY[i]+sourceY[0])/2),
-                segyio.su.offset: int(np.sqrt((sourceX[0]-groupX[i])**2+(sourceY[0]-groupY[i])**2))
+                segyio.su.scalco: int(coordScalar)
+                #segyio.su.iline: int(groupX[i]/dx+1),
+                #segyio.su.xline: int(groupY[i]/dy+1),
+                #segyio.su.cdpx: int((groupX[i]+sourceX[0])/2),
+                #segyio.su.cdpy: int((groupY[i]+sourceY[0])/2),
+                #segyio.su.offset: int(np.sqrt((sourceX[0]-groupX[i])**2+(sourceY[0]-groupY[i])**2))
             }
             segyfile.trace[i] = data[:, i]
         segyfile.dt = int(dt*1e3)
@@ -433,34 +433,54 @@ space_order = 10 # order of numerical approximation used for calc. partial deriv
 time_order = 2 # order of numerical approximation used for calc. partial derivatives in time
 f0 = 0.015 # peak/dominant frequency in kHz 
 t0 = 0 # simulation start, ms
-tn = 5000 # simulation end, ms
+tn = 6000 # simulation end, ms
 
 #-------------------------------------------------------------------------------------#
 # Add source coor.
-source_y_coor = np.arange(0, 3990, 30) # m
-source_x_coor = np.ones(len(source_y_coor))*7000  # m
+source_start = [7000, 0, 0]  # m
+source_end = [7000, 400, 0]  # m
+source_width = 0  # m
+source_int_x = 15 # m
+source_int_y = 15 # m
 
-source_coor = np.zeros((len(source_y_coor), 3))  # m
-source_coor[:, 1] = source_y_coor
-source_coor[:, 0] = source_x_coor
 
-source_coor_storage = source_coor
+source_coor_storage1 = coor_generator(
+    start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
+
+
+# source_start = [8000, 2000, 0]  # m
+# source_end = [8000, 8000, 0]  # m
+# source_width = 0  # m
+# source_int_x = 240 # m
+# source_int_y = 240 # m
+# source_coor_storage2 = coor_generator(
+#     start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
+
+
+source_start = [7000, 9600, 0]  # m
+source_end = [7000, 10020, 0]  # m
+source_width = 0  # m
+source_int_x = 15 # m
+source_int_y = 15 # m
+
+
+source_coor_storage3 = coor_generator(
+    start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
+
+
+source_coor_storage = np.vstack((source_coor_storage1, source_coor_storage3))
 
 #-------------------------------------------------------------------------------------#
 # Add receiver coor.
-recivers_coor_storage = []
+rec_start = [7000, 0, 0]  # m
+rec_end = [7000, 10020, 0]  # m
+rec_width = 0  # m
+rec_int_x = 15 # m
+rec_int_y = 15 # m
 
-for shots in range(len(source_y_coor)):
+recivers_coor_storage = coor_generator(
+    start=rec_start, end=rec_end, width=rec_width, bin_xline=rec_int_x, bin_inline=rec_int_y)
 
-    rec_start = [7000, shots*30+75, 0]  # m
-    rec_end = [7000, shots*30+6075, 0]  # m
-    rec_width = 0  # m
-    bin_xline = 15 # m
-    bin_inline = 15  # m
-
-    recivers_coor = rec_coor_generator(start=rec_start, end=rec_end,
-                             width=rec_width, bin_xline=bin_xline, bin_inline=bin_inline)
-    recivers_coor_storage.append(recivers_coor)
 
 #######################################################################################
 # Create the simulation model and time range for the simulation
@@ -488,12 +508,12 @@ s = model.grid.stepping_dim.spacing # ds, time step in time
 simulation_storage = []
 CPU_number = 15
 
-for set in range(10):
+for set in range(5):
     with cf.ProcessPoolExecutor(max_workers=CPU_number) as executor:
-        if set == 9:
-            for i in range(1+set*13,set*13+16): 
-                src_coor = source_coor_storage[-i]
-                rec_coor = recivers_coor_storage[-i]
+        if set == 4:
+            for i in range(1+set*10,16+set*10): 
+                src_coor = source_coor_storage[i-1]
+                rec_coor = recivers_coor_storage
                 #######################################################################################
                 #--------------------------SIMULATION TAKES PLACE HERE--------------------------------#
                 #######################################################################################
@@ -501,9 +521,9 @@ for set in range(10):
                 simulation_storage.append(simulation)
         
         else:
-            for i in range(1+set*13,14+set*13):
-                src_coor = source_coor_storage[-i]
-                rec_coor = recivers_coor_storage[-i] 
+            for i in range(1+set*10,11+set*10):
+                src_coor = source_coor_storage[i-1]
+                rec_coor = recivers_coor_storage 
                 #######################################################################################
                 #--------------------------SIMULATION TAKES PLACE HERE--------------------------------#
                 #######################################################################################
