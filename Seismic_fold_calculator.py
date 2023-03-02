@@ -62,11 +62,11 @@ def bin_the_midpoints(bins, midpoints):
 
 def timer(start, CPU_number):
     end = time.perf_counter()
-    print(f'{end-start}')
+    #print(f'{end-start}')
     hours, rem = divmod(end-start, 3600)
     minutes, seconds = divmod(rem, 60)
     print(
-        f'Simulation with {CPU_number} CPU took: \n{hours} hours, \n{minutes} minutes, \n{seconds} seconds')
+        f'Calculations with {CPU_number} CPU took: \n{hours} hours, \n{minutes} minutes, \n{seconds} seconds')
 
 
 # Start counting code running time
@@ -84,8 +84,8 @@ y = 10000     # Y extent of survey (m)
 
 #-------------------------------------------------------------------------------------#
 # Add source coor.
-source_start = [8000, 0, 0]  # m
-source_end = [8000, 400, 0]  # m
+source_start = [7000, 0, 0]  # m
+source_end = [7000, 400, 0]  # m
 source_width = 0  # m
 source_int_x = 15  # m
 source_int_y = 15  # m
@@ -94,8 +94,8 @@ source_int_y = 15  # m
 source_coor_storage1 = coor_generator(
     start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
 
-source_start = [8000, 2000, 0]  # m
-source_end = [8000, 8000, 0]  # m
+source_start = [7000, 2000, 0]  # m
+source_end = [7000, 8000, 0]  # m
 source_width = 0  # m
 source_int_x = 240  # m
 source_int_y = 240  # m
@@ -105,8 +105,8 @@ source_int_y = 240  # m
 #     start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
 
 
-source_start = [8000, 9600, 0]  # m
-source_end = [8000, 10020, 0]  # m
+source_start = [7000, 9600, 0]  # m
+source_end = [7000, 10020, 0]  # m
 source_width = 0  # m
 source_int_x = 15  # m
 source_int_y = 15  # m
@@ -272,4 +272,21 @@ plt.ylim(0, 10000)
 plt.show()
 
 # Calculate and print total simulation time
-timer(start, 10)
+timer(start, 1)
+
+print('\nSources spacing:')
+print('on direction of x', source_int_x, 'm')
+print('on direction of y', source_int_y, 'm')
+
+
+print('\nReceivers spacing:')
+print('on direction of x', rec_int_x, 'm')
+print('on direction of y', rec_int_y, 'm')
+
+
+print('\nA bin size:')
+print('on direction of x', bin_x, 'm')
+print('on direction of y', bin_x, 'm')
+
+
+#Print()
