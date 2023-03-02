@@ -58,14 +58,16 @@ def bin_the_midpoints(bins, midpoints):
         fold=len, min_offset='min')
     return gpd.GeoDataFrame(b.join(bin_stats))
 
-
-#######################################################################################
 def timer(start, CPU_number):
     end = time.perf_counter()
     print(f'{end-start}')
     hours, rem = divmod(end-start, 3600) 
     minutes, seconds = divmod(rem, 60)
     print(f'Simulation with {CPU_number} CPU took: \n{hours} hours, \n{minutes} minutes, \n{seconds} seconds')
+
+#Start counting code running time
+start = time.perf_counter() 
+
 #######################################################################################
 #--------------------------------Create survey geometry--------------------------------
 #######################################################################################
@@ -78,16 +80,39 @@ y = 10000     # Y extent of survey (m)
 
 #-------------------------------------------------------------------------------------#
 # Add source coor.
-source_start = [7000, 0, 0]  # m
-source_end = [7000, 10020, 0]  # m
+source_start = [8000, 0, 0]  # m
+source_end = [8000, 400, 0]  # m
+source_width = 0  # m
+source_int_x = 15 # m
+source_int_y = 15 # m
+
+
+source_coor_storage1 = coor_generator(
+    start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
+
+source_start = [8000, 2000, 0]  # m
+source_end = [8000, 8000, 0]  # m
 source_width = 0  # m
 source_int_x = 240 # m
 source_int_y = 240 # m
 
 
-source_coor_storage = coor_generator(
+# source_coor_storage2 = coor_generator(
+#     start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
+
+
+source_start = [8000, 9600, 0]  # m
+source_end = [8000, 10020, 0]  # m
+source_width = 0  # m
+source_int_x = 15 # m
+source_int_y = 15 # m
+
+
+source_coor_storage3 = coor_generator(
     start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
 
+
+source_coor_storage = np.vstack((source_coor_storage1, source_coor_storage3))
 
 #-------------------------------------------------------------------------------------#
 # Add receiver coor.
@@ -229,8 +254,8 @@ ax.grid(True)
 plt.title('Seismic fold', fontsize=15)
 plt.xlabel('x1, m')
 plt.ylabel('x2, m')
-plt.xlim(0, 14000)
-plt.ylim(0, 10000)
+plt.xlim(7000, 8000)
+plt.ylim(3000, 3100)
 plt.show()
 
 # Calculate and print total simulation time
