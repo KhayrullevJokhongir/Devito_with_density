@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import concurrent.futures as cf
-from shapely.geometry import Point, LineString, MultiPoint, Polygon
+from shapely.geometry import Point, LineString
 import geopandas as gpd
 import pandas as pd
 from fiona.crs import from_epsg
@@ -49,6 +49,7 @@ def coor_generator(start, end, width, bin_xline, bin_inline):
 
     return rec_coor
 
+
 def bin_the_midpoints(bins, midpoints):
     b = bins.copy()
     m = midpoints.copy()
@@ -58,18 +59,21 @@ def bin_the_midpoints(bins, midpoints):
         fold=len, min_offset='min')
     return gpd.GeoDataFrame(b.join(bin_stats))
 
+
 def timer(start, CPU_number):
     end = time.perf_counter()
     print(f'{end-start}')
-    hours, rem = divmod(end-start, 3600) 
+    hours, rem = divmod(end-start, 3600)
     minutes, seconds = divmod(rem, 60)
-    print(f'Simulation with {CPU_number} CPU took: \n{hours} hours, \n{minutes} minutes, \n{seconds} seconds')
+    print(
+        f'Simulation with {CPU_number} CPU took: \n{hours} hours, \n{minutes} minutes, \n{seconds} seconds')
 
-#Start counting code running time
-start = time.perf_counter() 
+
+# Start counting code running time
+start = time.perf_counter()
 
 #######################################################################################
-#--------------------------------Create survey geometry--------------------------------
+# --------------------------------Create survey geometry--------------------------------
 #######################################################################################
 xmi = 0       # X coordinate of bottom-left corner of survey geometry (m)
 ymi = 0       # Y coordinate of bottom-left corner of survey geometry (m)
@@ -83,8 +87,8 @@ y = 10000     # Y extent of survey (m)
 source_start = [8000, 0, 0]  # m
 source_end = [8000, 400, 0]  # m
 source_width = 0  # m
-source_int_x = 15 # m
-source_int_y = 15 # m
+source_int_x = 15  # m
+source_int_y = 15  # m
 
 
 source_coor_storage1 = coor_generator(
@@ -93,8 +97,8 @@ source_coor_storage1 = coor_generator(
 source_start = [8000, 2000, 0]  # m
 source_end = [8000, 8000, 0]  # m
 source_width = 0  # m
-source_int_x = 240 # m
-source_int_y = 240 # m
+source_int_x = 240  # m
+source_int_y = 240  # m
 
 
 # source_coor_storage2 = coor_generator(
@@ -104,8 +108,8 @@ source_int_y = 240 # m
 source_start = [8000, 9600, 0]  # m
 source_end = [8000, 10020, 0]  # m
 source_width = 0  # m
-source_int_x = 15 # m
-source_int_y = 15 # m
+source_int_x = 15  # m
+source_int_y = 15  # m
 
 
 source_coor_storage3 = coor_generator(
@@ -119,15 +123,15 @@ source_coor_storage = np.vstack((source_coor_storage1, source_coor_storage3))
 rec_start = [7000, 0, 0]  # m
 rec_end = [7000, 10020, 0]  # m
 rec_width = 0  # m
-rec_int_x = 15 # m
-rec_int_y = 15 # m
+rec_int_x = 15  # m
+rec_int_y = 15  # m
 
 recivers_coor_storage = coor_generator(
     start=rec_start, end=rec_end, width=rec_width, bin_xline=rec_int_x, bin_inline=rec_int_y)
 
 
 #######################################################################################
-#Prepare data for further processing and plotting
+# Prepare data for further processing and plotting
 rcvrs = [Point(x, y) for x, y in zip(
     recivers_coor_storage[:, 0], recivers_coor_storage[:, 1])]
 srcs = [Point(x, y) for x, y in zip(
@@ -147,17 +151,18 @@ except:
     # This will work regardless.
     survey.plot()
 plt.grid()
+plt.title('Sources and Receivers', fontsize=20)
 plt.xlim(0, 14000)
 plt.ylim(0, 10000)
-plt.xlabel('x1, m')
-plt.ylabel('x2, m')
+plt.xlabel('x1, m', fontsize=15)
+plt.ylabel('x2, m', fontsize=15)
 plt.show()
 
 
 #######################################################################################
-#--------------------------------Calculate mid points----------------------------------
+# --------------------------------Calculate mid points----------------------------------
 #######################################################################################
-#Create survey ID for source and receivers
+# Create survey ID for source and receivers
 sid = np.arange(len(survey))
 survey['SID'] = sid
 # survey.to_file('survey_orig.shp')
@@ -182,14 +187,14 @@ midpoints = gpd.GeoDataFrame({'geometry': midpoint_list,
 midpoints[:5]
 
 #-------------------------------------------------------------------------------------#
-#Plot midpoints
+# Plot midpoints
 ax = midpoints.plot(figsize=(12, 12), markersize=2, legend=True)
 plt.grid()
-plt.title('Midpoints')
+plt.title('Midpoints', fontsize=20)
 plt.xlim(0, 14000)
 plt.ylim(0, 10000)
-plt.xlabel('x1, m')
-plt.ylabel('x2, m')
+plt.xlabel('x1, m', fontsize=15)
+plt.ylabel('x2, m', fontsize=15)
 plt.show()
 
 # # midpoints.to_file('midpoints.shp')
@@ -211,14 +216,14 @@ plt.show()
 # plt.show()
 
 #######################################################################################
-#--------------------------------Calculate Bin coordinates-----------------------------
+# --------------------------------Calculate Bin coordinates-----------------------------
 #######################################################################################
 # Bin size in x and y directions
-bin_x = 30 #m
-bin_y = 30 #m
+bin_x = 30  # m
+bin_y = 30  # m
 
-shift2_middle_x = bin_x / 2 #for creating bin coordinates
-shift2_middle_y = bin_y / 2 #for creating bin coordinates
+shift2_middle_x = bin_x / 2  # for creating bin coordinates
+shift2_middle_y = bin_y / 2  # for creating bin coordinates
 
 x_values = np.arange(bin_x, 14000, bin_x) - shift2_middle_x
 
@@ -236,9 +241,9 @@ bins = gpd.GeoDataFrame(geometry=bin_polys)
 
 bins[:3]
 ax = bins.plot(figsize=(12, 12))
-plt.title('Seismic bins')
-plt.xlabel('x1, m')
-plt.ylabel('x2, m')
+plt.title('Seismic bins', fontsize=20)
+plt.xlabel('x1, m', fontsize=15)
+plt.ylabel('x2, m', fontsize=15)
 plt.xlim(0, 14000)
 plt.ylim(0, 10000)
 plt.show()
@@ -248,14 +253,22 @@ plt.show()
 #######################################################################################
 bin_stats = bin_the_midpoints(bins, midpoints)
 bin_stats[:10]
-ax = bin_stats.plot(figsize=(12, 12), column="fold",
-                    legend=True)
+
+cbar_steps = round((bin_stats['fold'].max()-bin_stats['fold'].min())/60)*10
+cbar_ticks = np.arange(bin_stats['fold'].min(
+), bin_stats['fold'].max(), cbar_steps).tolist()
+cbar_ticks = cbar_ticks[:-1]
+cbar_ticks.append(bin_stats['fold'].max())
+
+ax = bin_stats.plot(figsize=(12, 12), column="fold", cmap='jet', vmin=bin_stats['fold'].min(
+), vmax=bin_stats['fold'].max(), legend=True, legend_kwds={'location': 'right', 'shrink': 0.58, 'ticks': cbar_ticks})
+
 ax.grid(True)
-plt.title('Seismic fold', fontsize=15)
-plt.xlabel('x1, m')
-plt.ylabel('x2, m')
-plt.xlim(7000, 8000)
-plt.ylim(3000, 3100)
+plt.title('Seismic fold', fontsize=20)
+plt.xlabel('x1, m', fontsize=15)
+plt.ylabel('x2, m', fontsize=15)
+plt.xlim(0, 14000)
+plt.ylim(0, 10000)
 plt.show()
 
 # Calculate and print total simulation time
