@@ -66,7 +66,7 @@ def timer(start, CPU_number):
     hours, rem = divmod(end-start, 3600)
     minutes, seconds = divmod(rem, 60)
     print(
-        f'Calculations with {CPU_number} CPU took: \n{hours} hours, \n{minutes} minutes, \n{seconds} seconds')
+        f'Code run with {CPU_number} CPU in: \n{hours} hours, \n{minutes} minutes, \n{seconds} seconds')
 
 
 # Start counting code running time
