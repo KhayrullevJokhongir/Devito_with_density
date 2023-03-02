@@ -78,11 +78,11 @@ y = 10000     # Y extent of survey (m)
 
 #-------------------------------------------------------------------------------------#
 # Add source coor.
-source_start = [8000, 0, 0]  # m
-source_end = [8000, 10020, 0]  # m
+source_start = [7000, 0, 0]  # m
+source_end = [7000, 10020, 0]  # m
 source_width = 0  # m
-source_int_x = 60 # m
-source_int_y = 60 # m
+source_int_x = 240 # m
+source_int_y = 240 # m
 
 
 source_coor_storage = coor_generator(
@@ -92,7 +92,7 @@ source_coor_storage = coor_generator(
 #-------------------------------------------------------------------------------------#
 # Add receiver coor.
 rec_start = [7000, 0, 0]  # m
-rec_end = [7000, 10000, 0]  # m
+rec_end = [7000, 10020, 0]  # m
 rec_width = 0  # m
 rec_int_x = 15 # m
 rec_int_y = 15 # m
@@ -156,15 +156,16 @@ midpoints = gpd.GeoDataFrame({'geometry': midpoint_list,
 
 midpoints[:5]
 
-# #-------------------------------------------------------------------------------------#
-# #Plot midpoints
-# ax = midpoints.plot(markersize=2, legend=True)
-# plt.grid()
-# plt.xlim(0, 14000)
-# plt.ylim(0, 10000)
-# plt.xlabel('x1, m')
-# plt.ylabel('x2, m')
-# plt.show()
+#-------------------------------------------------------------------------------------#
+#Plot midpoints
+ax = midpoints.plot(figsize=(12, 12), markersize=2, legend=True)
+plt.grid()
+plt.title('Midpoints')
+plt.xlim(0, 14000)
+plt.ylim(0, 10000)
+plt.xlabel('x1, m')
+plt.ylabel('x2, m')
+plt.show()
 
 # # midpoints.to_file('midpoints.shp')
 
@@ -194,67 +195,23 @@ bin_y = 30 #m
 shift2_middle_x = bin_x / 2 #for creating bin coordinates
 shift2_middle_y = bin_y / 2 #for creating bin coordinates
 
-# Create the meshgrid
-#np.arange(bin_x, 14000, bin_x)
-
 x_values = np.arange(bin_x, 14000, bin_x) - shift2_middle_x
 
-#x_values = 7500
+#x_values = np.array([7500])
 y_values = np.arange(bin_y, 10000, bin_y) - shift2_middle_y
 x_mesh, y_mesh = np.meshgrid(x_values, y_values)
 
 x_mesh = x_mesh.flatten()
 y_mesh = y_mesh.flatten()
 
-mesh = np.vstack((x_mesh, y_mesh))
-mesh = mesh.reshape(mesh.shape[1], 2)
+bin_centres = gpd.GeoSeries([Point(x, y) for x, y in zip(x_mesh, y_mesh)])
 
-
-#Start counting simulation time
-start = time.perf_counter() 
-
-# def points(x,y):
-#     return Point(x,y)
-
-# Bin_points_sim_storage = []
-# Bin_points_storage = []
-
-# CPU_number = 10
-
-# with cf.ProcessPoolExecutor(max_workers=CPU_number) as executor:
-#     for y in y_mesh:
-#         for x in x_mesh:
-#             bin_point_sim = executor.submit(points, x,y)
-#             Bin_points_sim_storage.append(bin_point_sim)
-        
-#     for bin_point_sim in cf.as_completed(Bin_points_sim_storage):
-#         bin_point = bin_point_sim.result()
-#         Bin_points_storage.append(bin_point)
-
-
-# bin_centres = gpd.GeoSeries(Bin_points_storage)
-
-bin_centres = gpd.GeoSeries([Point(x, y)
-                             for x in x_mesh
-                             for y in y_mesh
-                             ])
-
-# Calculate and print total simulation time
-timer(start, 10)
-
-# bin_centres = gpd.GeoSeries([Point(xmi + 0.5*r*ri + jig, ymi + 0.5*s*si + jig)
-#                              for r in range(2*rperline - 3)
-#                              for s in range(2*sperline - 2)
-#                             ])
-
-# Buffers are diamond shaped so we have to scale and rotate them.
-scale_factor = np.sin(np.pi/4.)
-bin_polys = bin_centres.buffer(scale_factor*bin_x, 1).rotate(-45)
+bin_polys = bin_centres.buffer((bin_x)/2, cap_style=3)
 bins = gpd.GeoDataFrame(geometry=bin_polys)
 
 bins[:3]
-ax = bins.plot()
-plt.grid()
+ax = bins.plot(figsize=(12, 12))
+plt.title('Seismic bins')
 plt.xlabel('x1, m')
 plt.ylabel('x2, m')
 plt.xlim(0, 14000)
@@ -269,8 +226,12 @@ bin_stats[:10]
 ax = bin_stats.plot(figsize=(12, 12), column="fold",
                     legend=True)
 ax.grid(True)
+plt.title('Seismic fold', fontsize=15)
 plt.xlabel('x1, m')
 plt.ylabel('x2, m')
 plt.xlim(0, 14000)
 plt.ylim(0, 10000)
 plt.show()
+
+# Calculate and print total simulation time
+timer(start, 10)
