@@ -219,8 +219,8 @@ plt.show()
 # --------------------------------Calculate Bin coordinates-----------------------------
 #######################################################################################
 # Bin size in x and y directions
-bin_x = 30  # m
-bin_y = 30  # m
+bin_x = 15  # m
+bin_y = 15  # m
 
 shift2_middle_x = bin_x / 2  # for creating bin coordinates
 shift2_middle_y = bin_y / 2  # for creating bin coordinates
@@ -284,9 +284,18 @@ print('on direction of x', rec_int_x, 'm')
 print('on direction of y', rec_int_y, 'm')
 
 
+print('\nA bin origin:')
+print('on direction of x', bin_x/2, 'm')
+print('on direction of y', bin_x/2, 'm')
+
+
 print('\nA bin size:')
 print('on direction of x', bin_x, 'm')
 print('on direction of y', bin_x, 'm')
+
+
+print('\nRange of ilines: 1-'+f'{y_values.shape[0]+1}')
+print('\nRange of xlines: 1-'+f'{x_values.shape[0]+1}')
 
 
 #Print()
