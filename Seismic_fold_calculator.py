@@ -1,3 +1,4 @@
+
 import numpy as np
 import matplotlib.pyplot as plt
 import concurrent.futures as cf
@@ -94,15 +95,15 @@ source_int_y = 15  # m
 source_coor_storage1 = coor_generator(
     start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
 
-source_start = [7000, 2000, 0]  # m
-source_end = [7000, 8000, 0]  # m
+source_start = [7000, 500, 0]  # m
+source_end = [7000, 9500, 0]  # m
 source_width = 0  # m
-source_int_x = 240  # m
-source_int_y = 240  # m
+source_int_x = 250  # m
+source_int_y = 250  # m
 
 
-# source_coor_storage2 = coor_generator(
-#     start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
+source_coor_storage2 = coor_generator(
+    start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
 
 
 source_start = [7000, 9600, 0]  # m
@@ -294,8 +295,6 @@ print('on direction of x', bin_x, 'm')
 print('on direction of y', bin_x, 'm')
 
 
-print('\nRange of ilines: 1-'+f'{y_values.shape[0]+1}')
-print('\nRange of xlines: 1-'+f'{x_values.shape[0]+1}')
+print('\nRange of ilines: 1-'+f'{y_values.shape[0]}')
+print('\nRange of xlines: 1-'+f'{x_values.shape[0]}')
 
-
-#Print()
