@@ -468,7 +468,7 @@ print('on direction of x', source_int_x, 'm')
 print('on direction of y', source_int_y, 'm')
 
 print('\nStreamer length:', streamer_length, 'm')
-print('\nNumber of receivers in streamer:', recivers_coor_storage.shape[1])
+print('Number of receivers on the streamer:', recivers_coor_storage.shape[1])
 print('Receivers spacing:')
 print('on direction of x', rec_int_x, 'm')
 print('on direction of y', rec_int_y, 'm')
@@ -484,5 +484,5 @@ print('on direction of y', bin_x, 'm')
 
 
 print('\nRange of ilines: 1-'+f'{y_values.shape[0]}')
-print('\nRange of xlines: 1-'+f'{x_values.shape[0]}')
+print('Range of xlines: 1-'+f'{x_values.shape[0]}')
 
