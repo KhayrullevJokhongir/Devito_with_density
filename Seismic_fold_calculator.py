@@ -176,7 +176,7 @@ offsets = [r.distance(s)
            for r in rcvrs
            for s in srcs]
 
-azimuths = [np.arctan((r.x - s.x)/(r.y - s.y+1e-10))
+azimuths = [np.arctan((r.x - s.x)/(r.y - s.y))
             for r in rcvrs
             for s in srcs]
 
