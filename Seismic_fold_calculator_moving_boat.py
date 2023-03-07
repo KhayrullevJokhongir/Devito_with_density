@@ -76,16 +76,16 @@ start = time.perf_counter()
 #######################################################################################
 # --------------------------------Create survey geometry-------------------------------
 #######################################################################################
-xmi = 0       # X coordinate of bottom-left corner of survey geometry (m)
-ymi = 0       # Y coordinate of bottom-left corner of survey geometry (m)
+xmi = 0       # X coordinate of bottom-left corner of survey geometry, m
+ymi = 0       # Y coordinate of bottom-left corner of survey geometry, m
 
-x = 14000     # X extent of survey (m)
-y = 10000     # Y extent of survey (m)
+x = 14000     # X extent of survey, m
+y = 10000     # Y extent of survey, m
 
 
 #-------------------------------------------------------------------------------------#
 # Add source coor.
-source_start = [6950, 0, 0]  # m
+source_start = [6950, 1, 0]  # m
 source_end = [6950, 5020, 0]  # m
 source_width = 0  # m
 source_int_x = 30  # m
@@ -100,12 +100,17 @@ source_coor_storage = coor_generator(
 # Add receivers coor.
 recivers_coor_storage = []
 
+first_rec_offset = 50 # m
+last_rec_offset = 5000 # m
+
+streamer_length = last_rec_offset - first_rec_offset # m
+
 for i in range(source_coor_storage.shape[0]):
 
     rec_start = [source_coor_storage[i][0]+100,
-                 source_coor_storage[i][1]+50, source_coor_storage[i][2]]  # m
+                 source_coor_storage[i][1]+first_rec_offset, source_coor_storage[i][2]]  # m
     rec_end = [source_coor_storage[i][0]+100, source_coor_storage[i]
-               [1]+5000, source_coor_storage[i][2]]  # m
+               [1]+last_rec_offset, source_coor_storage[i][2]]  # m
     rec_width = 0  # m
     rec_int_x = 15  # m
     rec_int_y = 15  # m
@@ -147,6 +152,43 @@ except:
     survey_of_a_shot.plot()
 plt.grid()
 plt.title(f'Sources and Receivers of a shot {Shot_number2_plot}', fontsize=20)
+plt.xlim(0, 14000)
+plt.ylim(0, 10000)
+plt.xlabel('x1, m', fontsize=15)
+plt.ylabel('x2, m', fontsize=15)
+plt.show()
+
+
+#######################################################################################
+#Plot one shot and its receivers
+#######################################################################################
+Last_shot_2_plot = len(source_coor_storage)-1
+
+recivers_coor_of_last_shot = recivers_coor_storage[Last_shot_2_plot]
+source_coor_of_last_shot = source_coor_storage[Last_shot_2_plot]
+
+# Prepare data for further processing and plotting
+rcvrs_of_last_shot = [Point(x, y) for x, y in zip(
+    recivers_coor_of_last_shot[:, 0], recivers_coor_of_last_shot[:, 1])]
+srcs_of_last_shot = [Point(source_coor_of_last_shot[0], source_coor_of_last_shot[1])]
+
+
+#-------------------------------------------------------------------------------------#
+station_list = ['Receiver'] * \
+    len(rcvrs_of_last_shot) + ['Source']*len(srcs_of_last_shot)
+survey_of_last_shot = gpd.GeoDataFrame(
+    {'geometry': rcvrs_of_last_shot+srcs_of_last_shot, 'station': station_list})
+
+
+try:
+    # Needs geopandas fork: https://github.com/kwinkunks/geopandas
+    survey_of_last_shot.plot(figsize=(12, 12), column='station',
+                          cmap="bwr", markersize=4, legend=True)
+except:
+    # This will work regardless.
+    survey_of_last_shot.plot()
+plt.grid()
+plt.title(f'Sources and Receivers of last shot', fontsize=20)
 plt.xlim(0, 14000)
 plt.ylim(0, 10000)
 plt.xlabel('x1, m', fontsize=15)
@@ -230,6 +272,46 @@ plt.xlabel('x1, m', fontsize=15)
 plt.ylabel('x2, m', fontsize=15)
 plt.show()
 
+#######################################################################################
+#Midpoints for last shot specified above
+#######################################################################################
+
+# Create survey ID for source and receivers
+sid_of_last_shot = np.arange(len(survey_of_last_shot))
+survey_of_last_shot['SID'] = sid_of_last_shot
+# survey.to_file('survey_orig.shp')
+
+midpoint_list_of_last_shot = [LineString([r, s]).interpolate(0.5, normalized=True)
+                           for r in rcvrs_of_last_shot
+                           for s in srcs_of_last_shot]
+
+offsets_of_last_shot = [r.distance(s)
+                     for r in rcvrs_of_last_shot
+                     for s in srcs_of_last_shot]
+
+azimuths_of_last_shot = [np.arctan((r.x - s.x)/(r.y - s.y))
+                      for r in rcvrs_of_last_shot
+                      for s in srcs_of_last_shot]
+
+midpoints_of_last_shot = gpd.GeoDataFrame({'geometry': midpoint_list_of_last_shot,
+                                        'offset': offsets_of_last_shot,
+                                        'azimuth': np.degrees(azimuths_of_last_shot),
+                                        })
+
+midpoints_of_last_shot[:5]
+
+#-------------------------------------------------------------------------------------#
+# Plot midpoints
+ax = midpoints_of_last_shot.plot(figsize=(12, 12), markersize=2, legend=True)
+plt.grid()
+plt.title(
+    f'Midpoints of last shot and its receivers', fontsize=20)
+plt.xlim(0, 14000)
+plt.ylim(0, 10000)
+plt.xlabel('x1, m', fontsize=15)
+plt.ylabel('x2, m', fontsize=15)
+plt.show()
+
 
 #######################################################################################
 #Midpoints for all shots specified above
@@ -237,6 +319,8 @@ plt.show()
 # Create survey ID for source and receivers
 sid = np.arange(len(survey))
 survey['SID'] = sid
+
+#Save if desired
 # survey.to_file('survey_orig.shp')
 
 midpoint_list = []
@@ -289,7 +373,7 @@ midpoints = gpd.GeoDataFrame({'geometry': midpoint_list,
 midpoints[:5]
 
 #-------------------------------------------------------------------------------------#
-# Plot midpoints
+# Plot all midpoints
 ax = midpoints.plot(figsize=(12, 12), markersize=2, legend=True)
 plt.grid()
 plt.title(f'Midpoints of all shots and their receivers', fontsize=20)
@@ -299,8 +383,10 @@ plt.xlabel('x1, m', fontsize=15)
 plt.ylabel('x2, m', fontsize=15)
 plt.show()
 
+#Save if desired
 # # midpoints.to_file('midpoints.shp')
 
+#Plot minimum offset if desired
 # midpoints['offsetx'] = offsets * np.sin(azimuths)
 # midpoints['offsety'] = offsets * np.cos(azimuths)
 # midpoints[:5].offsetx  # Easy!
@@ -351,12 +437,12 @@ plt.ylim(0, 10000)
 plt.show()
 
 #######################################################################################
-# Spatial join
+# Spatial join midpoints of all sources with bins  
 #######################################################################################
 bin_stats = bin_the_midpoints(bins, midpoints)
 bin_stats[:10]
 
-cbar_steps = round((bin_stats['fold'].max()-bin_stats['fold'].min()))
+cbar_steps = round((bin_stats['fold'].max()-bin_stats['fold'].min())/60)*10
 cbar_ticks = np.arange(bin_stats['fold'].min(
 ), bin_stats['fold'].max(), cbar_steps).tolist()
 cbar_ticks = cbar_ticks[:-1]
@@ -376,15 +462,16 @@ plt.show()
 # Calculate and print total simulation time
 timer(start, 1)
 
-print('\nSources spacing:')
+print('\nNumber of shots:', source_coor_storage.shape[0])
+print('Sources spacing:')
 print('on direction of x', source_int_x, 'm')
 print('on direction of y', source_int_y, 'm')
 
-
-print('\nReceivers spacing:')
+print('\nStreamer length:', streamer_length, 'm')
+print('\nNumber of receivers in streamer:', recivers_coor_storage.shape[1])
+print('Receivers spacing:')
 print('on direction of x', rec_int_x, 'm')
 print('on direction of y', rec_int_y, 'm')
-
 
 print('\nA bin origin:')
 print('on direction of x', bin_x/2, 'm')
