@@ -20,12 +20,15 @@ from examples.seismic import Receiver
 def timer(start, CPU_number):
     end = time.perf_counter()
     print(f'{end-start}')
-    hours, rem = divmod(end-start, 3600) 
+    hours, rem = divmod(end-start, 3600)
     minutes, seconds = divmod(rem, 60)
-    print(f'Simulation with {CPU_number} CPU took: \n{hours} hours, \n{minutes} minutes, \n{seconds} seconds')
+    print(
+        f'Simulation with {CPU_number} CPU took: \n{hours} hours, \n{minutes} minutes, \n{seconds} seconds')
 
 #######################################################################################
 # Used to read segy files
+
+
 def read_segy_file(file):
     """ Open a segy file, read data inside of the file and get file shape"""
     # Note:
@@ -45,6 +48,8 @@ def read_segy_file(file):
 
 #######################################################################################
 # Creates receiver coordinates used in acquisition
+
+
 def coor_generator(start, end, width, bin_xline, bin_inline):
     '''Creates rectangle shaped seismic data recording acqusition geometry'''
     # Note:
@@ -88,24 +93,30 @@ def coor_generator(start, end, width, bin_xline, bin_inline):
 #######################################################################################
 #---------------------Functions for wave simulation using devito----------------------------
 #######################################################################################
-# Creates source and receivers for a stencil 
+# Creates source and receivers for a stencil
+
+
 def src_rec(p, model, src_coor, rec_coor):
-    src = RickerSource(name='src', grid=model.grid, f0=f0, time_range=time_range)
-    src.coordinates.data[:] = src_coor  
+    src = RickerSource(name='src', grid=model.grid,
+                       f0=f0, time_range=time_range)
+    src.coordinates.data[:] = src_coor
 
     # Create symbol for receivers
-    rec = Receiver(name='rec', grid=model.grid, npoint=rec_coor.shape[0], time_range=time_range)
+    rec = Receiver(name='rec', grid=model.grid,
+                   npoint=rec_coor.shape[0], time_range=time_range)
 
     # Prescribe even spacing for receivers along the x-axis
-    rec.coordinates.data[:] = rec_coor  
+    rec.coordinates.data[:] = rec_coor
 
     src_term = src.inject(field=p.forward, expr=(s**time_order*src))
     rec_term = rec.interpolate(expr=p)
-    
+
     return src_term + rec_term, src, rec
 
 #######################################################################################
 # Creates stencil from Jan Thorbacke 2023
+
+
 def create_stencil(model, p, v):
 
     # Bulk modulus
@@ -113,41 +124,41 @@ def create_stencil(model, p, v):
 
     # Define PDE to v
     pde_v = v.dt + b * grad(p)
-    u_v = Eq(v.forward, damp * solve(pde_v, v.forward))    
-
+    u_v = Eq(v.forward, damp * solve(pde_v, v.forward))
 
     # Define PDE to p
-    pde_p = p.dt + bm * div(v.forward) 
+    pde_p = p.dt + bm * div(v.forward)
     u_p = Eq(p.forward, damp * solve(pde_p, p.forward))
 
-    
     return [u_v, u_p]
 
 #######################################################################################
 # Perfors sSismic Modelling using heterogenious acoustic wave equation.
-def modelling_AWS(model, src_coor, rec_coor, shot_number):
-    
-    # Create symbols for particle velocity, pressure field, memory variable, source and receivers
-    
-    v = VectorTimeFunction(name="v", grid=model.grid, time_order=time_order, space_order=space_order)
 
-    p = TimeFunction(name="p", grid=model.grid, time_order=time_order, space_order=space_order, 
+
+def modelling_AWS(model, src_coor, rec_coor, shot_number):
+
+    # Create symbols for particle velocity, pressure field, memory variable, source and receivers
+
+    v = VectorTimeFunction(name="v", grid=model.grid,
+                           time_order=time_order, space_order=space_order)
+
+    p = TimeFunction(name="p", grid=model.grid, time_order=time_order, space_order=space_order,
                      staggered=NODE)
 
-    
     # define the source injection and create interpolation expression for receivers
-    
-    src_rec_expr, src, rec = src_rec(p, model,src_coor, rec_coor)
-    
+
+    src_rec_expr, src, rec = src_rec(p, model, src_coor, rec_coor)
+
     eqn = create_stencil(model, p, v)
-    
+
     op = Operator(eqn + src_rec_expr, subs=model.spacing_map)
-    
+
     op(time=time_range.num-1, dt=dt, src=src, rec=rec)
 
     trimmed_data = p.data[1, nbl:-nbl, nbl: -nbl, nbl: -nbl]
-    
-    return trimmed_data, rec, src_coor, rec_coor, shot_number 
+
+    return trimmed_data, rec, src_coor, rec_coor, shot_number
 
 #######################################################################################
 #--------------Functions for simulation using devito have ended------------------------
@@ -155,6 +166,8 @@ def modelling_AWS(model, src_coor, rec_coor, shot_number):
 
 #######################################################################################
 # Subsurface model properties 3D plotted
+
+
 def plot_subs_model(model, grid_spacing, colorbar_label, cmap, figure_title, fig_name, save=False, show=False):
     '''Plot 3D subsurface models using PyVista python package'''
     # Note:
@@ -210,8 +223,10 @@ def plot_subs_model(model, grid_spacing, colorbar_label, cmap, figure_title, fig
         return pl.show()
 
 #######################################################################################
-# Receivers recording 2D plotter 
-def plot_receiver(rec, src_coor, rec_coor,visualize, save):
+# Receivers recording 2D plotter
+
+
+def plot_receiver(rec, src_coor, rec_coor, visualize, save):
     plt.figure(1)
     plt.imshow(rec.data, cmap='seismic', aspect='auto', vmax=0.005,
                vmin=-0.005, extent=(0, rec_coor.shape[0], tn, t0))
@@ -224,18 +239,21 @@ def plot_receiver(rec, src_coor, rec_coor,visualize, save):
         plt.show()
 
     if save:
-        name ='Recording_'+(f"{tn/1000}")+'s_shot'+(f"{src_coor[0]}")+'_'+(f"{src_coor[1]}")+'.png'
+        name = 'Recording_'+(f"{tn/1000}")+'s_shot' + \
+            (f"{src_coor[0]}")+'_'+(f"{src_coor[1]}")+'.png'
         plt.savefig(name, dpi=200, bbox_inches='tight')
-    
+
     plt.close()
 
 #######################################################################################
 # Plot 3 orthogonal slices of sim. data in 3D
+
+
 def plot_sim_cube(trimmed_data, dx, dy, dz, src_coor, rec_save, visualize, save):
     #Find length of axis
-    x_len = np.round(trimmed_data.shape[0]*dx,-3)
-    y_len = np.round(trimmed_data.shape[1]*dy,-3)
-    z_len = np.round(trimmed_data.shape[-1]*dz,-3)
+    x_len = np.round(trimmed_data.shape[0]*dx, -3)
+    y_len = np.round(trimmed_data.shape[1]*dy, -3)
+    z_len = np.round(trimmed_data.shape[-1]*dz, -3)
 
     # Create grid for data to be plotted
     grid = pv.UniformGrid(dimensions=trimmed_data.shape)
@@ -253,7 +271,6 @@ def plot_sim_cube(trimmed_data, dx, dy, dz, src_coor, rec_save, visualize, save)
         pl = pv.Plotter(title=('Acoustic wave simulation'))
     else:
         pl = pv.Plotter(title=('Acoustic wave simulation'), off_screen=True)
-
 
     pl.set_background('grey', top='black')
 
@@ -276,7 +293,7 @@ def plot_sim_cube(trimmed_data, dx, dy, dz, src_coor, rec_save, visualize, save)
 
     # Add bounds and bound labels
     pl.show_bounds(orth_slices, zlabel='Depth, m', xlabel='X1, m',
-                    ylabel='X2, m', axes_ranges=[0, x_len, 0, y_len, 0, z_len])
+                   ylabel='X2, m', axes_ranges=[0, x_len, 0, y_len, 0, z_len])
 
     labels = dict(zlabel='Depth, m', xlabel='X1, m', ylabel='X2, m')
     pl.add_axes(**labels)
@@ -287,19 +304,22 @@ def plot_sim_cube(trimmed_data, dx, dy, dz, src_coor, rec_save, visualize, save)
     _ = pl.add_legend(legend_entries, size=(0.1, 0.1), face='rectangle')
 
     pl.camera_position = [(-12590.592718281714, -11962.645016328186, -3776.3167104272843),
-                            (1172.83396018759, 395.40657698388264,
-                            820.5129171311286),
-                            (0.15457317302520832, 0.18859093540817437, -0.969814721100267)]
+                          (1172.83396018759, 395.40657698388264,
+                           820.5129171311286),
+                          (0.15457317302520832, 0.18859093540817437, -0.969814721100267)]
 
     if visualize:
         pl.show()
 
     if save:
-        save_name = 'Wavefield_' + f"{tn/1000}"+'s_shot' + (f"{src_coor[0]}")+'_'+(f"{src_coor[1]}")+'.png'
+        save_name = 'Wavefield_' + f"{tn/1000}"+'s_shot' + \
+            (f"{src_coor[0]}")+'_'+(f"{src_coor[1]}")+'.png'
         pl.show(screenshot=save_name, window_size=[1280, 720])
 
 #######################################################################################
 # Time resampling for shot records
+
+
 def resample(rec, num):
     start, stop = rec._time_range.start, rec._time_range.stop
     dt0 = rec._time_range.step
@@ -321,6 +341,8 @@ def resample(rec, num):
 
 #######################################################################################
 # Segy writer for shot records
+
+
 def segy_write(data, shot_number, sourceX, sourceZ, groupX, groupZ, dt, filename, sourceY=None, groupY=None, elevScalar=-1000, coordScalar=-1000):
 
     nt = data.shape[0]
@@ -362,11 +384,13 @@ def segy_write(data, shot_number, sourceX, sourceZ, groupX, groupZ, dt, filename
                 #segyio.su.cdpy: int((groupY[i]+sourceY[0])/2),
                 #segyio.su.offset: int(np.sqrt((sourceX[0]-groupX[i])**2+(sourceY[0]-groupY[i])**2))
             }
-            segyfile.trace[i] = data[:, i]
+            segyfile.trace[i] = np.float32(data[:, i])
         segyfile.dt = int(dt*1e3)
 
 #######################################################################################
 # Saves a file written by segy_writer in .segy format
+
+
 def save_rec(rec, shot_number, src_coords, recloc, nt, dt):
 
     if rec.data.size != 0:
@@ -375,20 +399,19 @@ def save_rec(rec, shot_number, src_coords, recloc, nt, dt):
         segy_write(rec_save, shot_number,
                    [src_coords[0]],
                    [src_coords[-1]],
-                   recloc[:,0],
-                   recloc[:,-1],
+                   recloc[:, 0],
+                   recloc[:, -1],
                    dt,  'Shot_'+(f"{src_coords[0]}") +
                    '_'+(f"{src_coords[1]}")+'.segy',
                    sourceY=[src_coords[1]],
-                   groupY=recloc[:,1],)
-
+                   groupY=recloc[:, 1],)
 
 
 #######################################################################################
 #----------------------------- MAIN CODE STARTS HERE----------------------------------#
 #######################################################################################
 #Start counting simulation time
-start = time.perf_counter() 
+start = time.perf_counter()
 
 # Load velocity and density cubes
 vel_file = 'Iversen2008_smooth_model_15m_grid.sgy'
@@ -409,9 +432,15 @@ else:
 
 #######################################################################################
 # Plot subsurface model's properties
-dx = 15 # m
-dy = 15 # m
-dz = 15 # m
+dx = 15  # m
+dx = np.float32(dx)
+
+dy = 15  # m
+dy = np.float32(dy)
+
+dz = 15  # m
+dz = np.float32(dz)
+
 
 # Plot P-wave speed and bulk density models used for the simulation
 plot_subs_model(model=velocity_cube, grid_spacing=dx, colorbar_label="P-wave speed, km/s",
@@ -425,109 +454,109 @@ plot_subs_model(model=density_cube, grid_spacing=dx, colorbar_label="Bulk densit
 #######################################################################################
 #---------------------------DEFINE PARAMETRS FOR SIMULATION#---------------------------
 #######################################################################################
-shape = (nptx, npty, nptz) 
-spacing = (dx, dy, dz) # m 
-origin = (0., 0., 0.) # m
-nbl = 50 # number of indexes in dumping layer
-space_order = 10 # order of numerical approximation used for calc. partial derivatives in space
-time_order = 2 # order of numerical approximation used for calc. partial derivatives in time
-f0 = 0.015 # peak/dominant frequency in kHz 
-t0 = 0 # simulation start, ms
-tn = 6000 # simulation end, ms
+shape = (nptx, npty, nptz)
+spacing = (dx, dy, dz)  # m
+origin = (0., 0., 0.)  # m
+nbl = 50  # number of indexes in dumping layer
+# order of numerical approximation used for calc. partial derivatives in space
+space_order = 10
+time_order = 2  # order of numerical approximation used for calc. partial derivatives in time
+f0 = 0.015  # peak/dominant frequency in kHz
+t0 = 0  # simulation start, ms
+tn = 5000  # simulation end, ms
+
+#-------------------------------------------------------------------------------------#
 
 #-------------------------------------------------------------------------------------#
 # Add source coor.
-source_start = [7000, 0, 0]  # m
-source_end = [7000, 400, 0]  # m
+source_start = [6950, 1, 0]  # m
+source_end = [6950, 5020, 0]  # m
 source_width = 0  # m
-source_int_x = 15 # m
-source_int_y = 15 # m
+source_int_x = 15  # m
+source_int_y = 15  # m
 
 
-source_coor_storage1 = coor_generator(
+source_coor_storage = coor_generator(
     start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
 
-
-# source_start = [8000, 2000, 0]  # m
-# source_end = [8000, 8000, 0]  # m
-# source_width = 0  # m
-# source_int_x = 240 # m
-# source_int_y = 240 # m
-# source_coor_storage2 = coor_generator(
-#     start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
-
-
-source_start = [7000, 9600, 0]  # m
-source_end = [7000, 10020, 0]  # m
-source_width = 0  # m
-source_int_x = 15 # m
-source_int_y = 15 # m
-
-
-source_coor_storage3 = coor_generator(
-    start=source_start, end=source_end, width=source_width, bin_xline=source_int_x, bin_inline=source_int_y)
-
-
-source_coor_storage = np.vstack((source_coor_storage1, source_coor_storage3))
-
+source_coor_storage = source_coor_storage.astype(np.float32)
 #-------------------------------------------------------------------------------------#
-# Add receiver coor.
-rec_start = [7000, 0, 0]  # m
-rec_end = [7000, 10020, 0]  # m
-rec_width = 0  # m
-rec_int_x = 15 # m
-rec_int_y = 15 # m
+# Add receivers coor.
+recivers_coor_storage = []
 
-recivers_coor_storage = coor_generator(
-    start=rec_start, end=rec_end, width=rec_width, bin_xline=rec_int_x, bin_inline=rec_int_y)
+first_rec_offset = 50  # m
+last_rec_offset = 5000  # m
 
+streamer_length = last_rec_offset - first_rec_offset  # m
+
+for i in range(source_coor_storage.shape[0]):
+
+    rec_start = [source_coor_storage[i][0]+100,
+                 source_coor_storage[i][1]+first_rec_offset, source_coor_storage[i][2]]  # m
+    rec_end = [source_coor_storage[i][0]+100, source_coor_storage[i]
+               [1]+last_rec_offset, source_coor_storage[i][2]]  # m
+    rec_width = 0  # m
+    rec_int_x = 15  # m
+    rec_int_y = 15  # m
+
+    recivers_coor = coor_generator(
+        start=rec_start, end=rec_end, width=rec_width, bin_xline=rec_int_x, bin_inline=rec_int_y)
+
+    recivers_coor_storage.append(recivers_coor)
+
+recivers_coor_storage = np.array(recivers_coor_storage)
+
+recivers_coor_storage = recivers_coor_storage.astype(np.float32)
 
 #######################################################################################
 # Create the simulation model and time range for the simulation
-model = Model(space_order=space_order, vp=velocity_cube, b=1/density_cube, 
-                           origin=origin, shape=shape, spacing=spacing, 
-                           nbl=nbl)
+model = Model(space_order=space_order, vp=velocity_cube, b=1/density_cube,
+              origin=origin, shape=shape, spacing=spacing,
+              nbl=nbl)
 
-dt = np.trunc(model.critical_dt) #ms
+dt = np.trunc(model.critical_dt)  # ms
 print(f'simulation time step is {dt} ms')
 time_range = TimeAxis(start=t0, stop=tn, step=dt)
 
 #######################################################################################
 #Create paramters for generating devito's stencil
-b = model.b # bouyoncy/inverse of bulk density
-rho = 1./b # bulk density
-vp = model.vp # P-wave speed
-lam = vp * vp * rho # bulk modulus 
-damp = model.damp # damping layer
-s = model.grid.stepping_dim.spacing # ds, time step in time
+b = model.b  # bouyoncy/inverse of bulk density
+rho = 1./b  # bulk density
+vp = model.vp  # P-wave speed
+lam = vp * vp * rho  # bulk modulus
+damp = model.damp  # damping layer
+
+s = model.grid.stepping_dim.spacing  # ds, time step in time
 
 #######################################################################################
 #------------------------PERFORM PARALELIZED SIMULATION-------------------------------#
 #######################################################################################
+source_coor_storage = source_coor_storage[::-1, :]
+recivers_coor_storage = recivers_coor_storage[::-1, :, :]
 
 simulation_storage = []
-CPU_number = 15
+CPU_number = 12
 
-for set in range(5):
+for set in range(28):
     with cf.ProcessPoolExecutor(max_workers=CPU_number) as executor:
-        if set == 4:
-            for i in range(1+set*10,16+set*10): 
-                src_coor = source_coor_storage[i-1]
-                rec_coor = recivers_coor_storage
+        if set == 27:
+            for i in range(set*12,11+set*12): 
+                src_coor = source_coor_storage[i]
+                rec_coor = recivers_coor_storage[i]
                 #######################################################################################
                 #--------------------------SIMULATION TAKES PLACE HERE--------------------------------#
                 #######################################################################################
-                simulation = executor.submit(modelling_AWS, model, src_coor, rec_coor, shot_number=i)
+                simulation = executor.submit(modelling_AWS, model, src_coor, rec_coor, shot_number=(i+1))
                 simulation_storage.append(simulation)
         
         else:
-            for i in range(1+set*10,11+set*10):
-                src_coor = source_coor_storage[i-1]
-                rec_coor = recivers_coor_storage 
+            for i in range(set*12,12+set*12):
+                src_coor = source_coor_storage[i]
+                rec_coor = recivers_coor_storage[i] 
                 #######################################################################################
                 #--------------------------SIMULATION TAKES PLACE HERE--------------------------------#
                 #######################################################################################
-                simulation = executor.submit(modelling_AWS, model, src_coor, rec_coor, shot_number=i)
+                simulation = executor.submit(modelling_AWS, model, src_coor, rec_coor, shot_number=(i+1))
                 simulation_storage.append(simulation)
         
         for simulation in cf.as_completed(simulation_storage):
@@ -549,7 +578,7 @@ for set in range(5):
             #######################################################################################
             # Check output, save simulation cube and data recorded on receivers
             info("Nan values : (%s, %s)" %
-                (np.any(np.isnan(trimmed_data.data)), np.any(np.isnan(rec.data))))
+                (np.any(np.isnan(trimmed_data)), np.any(np.isnan(rec.data))))
 
             # info("Saving simulation cube")
             # np.save(f'Cube_of_shot_{src_coor_save}.npy',trimmed_data)
