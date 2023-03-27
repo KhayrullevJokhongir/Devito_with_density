@@ -142,11 +142,15 @@ station_list = ['Receiver'] * \
 survey_of_a_shot = gpd.GeoDataFrame(
     {'geometry': rcvrs_of_a_shot+srcs_of_a_shot, 'station': station_list})
 
+colors = [(0, 0.3, 0), (1, 1, 1), (1, 0, 0)]
+
+# Create the colormap
+GR_color_map = plt.matplotlib.colors.LinearSegmentedColormap.from_list("Green-Red", colors)
 
 try:
     # Needs geopandas fork: https://github.com/kwinkunks/geopandas
     survey_of_a_shot.plot(figsize=(12, 12), column='station',
-                          cmap="bwr", markersize=4, legend=True)
+                          cmap=GR_color_map, markersize=4, legend=True)
 except:
     # This will work regardless.
     survey_of_a_shot.plot()
@@ -184,7 +188,7 @@ survey_of_last_shot = gpd.GeoDataFrame(
 try:
     # Needs geopandas fork: https://github.com/kwinkunks/geopandas
     survey_of_last_shot.plot(figsize=(12, 12), column='station',
-                          cmap="bwr", markersize=4, legend=True)
+                          cmap=GR_color_map, markersize=4, legend=True)
 except:
     # This will work regardless.
     survey_of_last_shot.plot()
@@ -217,7 +221,7 @@ survey = gpd.GeoDataFrame({'geometry': rcvrs+srcs, 'station': station_list})
 try:
     # Needs geopandas fork: https://github.com/kwinkunks/geopandas
     survey.plot(figsize=(12, 12), column='station',
-                cmap="bwr", markersize=2, legend=True)
+                cmap=GR_color_map, markersize=2, legend=True)
 except:
     # This will work regardless.
     survey.plot()
