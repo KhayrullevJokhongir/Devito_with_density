@@ -88,8 +88,8 @@ y = 10000     # Y extent of survey, m
 source_start = [6950, 1, 0]  # m
 source_end = [6950, 5020, 0]  # m
 source_width = 0  # m
-source_int_x = 30  # m
-source_int_y = 30  # m
+source_int_x = 15  # m
+source_int_y = 15  # m
 
 
 source_coor_storage = coor_generator(
@@ -151,7 +151,8 @@ except:
     # This will work regardless.
     survey_of_a_shot.plot()
 plt.grid()
-plt.title(f'Sources and Receivers of a shot {Shot_number2_plot}', fontsize=20)
+#plt.title(f'Sources and Receivers of a shot {Shot_number2_plot}', fontsize=20)
+plt.title(f'Sources and receivers of last shot', fontsize=20)
 plt.xlim(0, 14000)
 plt.ylim(0, 10000)
 plt.xlabel('x1, m', fontsize=15)
@@ -188,7 +189,7 @@ except:
     # This will work regardless.
     survey_of_last_shot.plot()
 plt.grid()
-plt.title(f'Sources and Receivers of last shot', fontsize=20)
+plt.title(f'Sources and Receivers of first shot', fontsize=20)
 plt.xlim(0, 14000)
 plt.ylim(0, 10000)
 plt.xlabel('x1, m', fontsize=15)
@@ -264,8 +265,12 @@ midpoints_of_a_shot[:5]
 # Plot midpoints
 ax = midpoints_of_a_shot.plot(figsize=(12, 12), markersize=2, legend=True)
 plt.grid()
+# plt.title(
+#     f'Midpoints of a shot {Shot_number2_plot} and its receivers', fontsize=20)
+
 plt.title(
-    f'Midpoints of a shot {Shot_number2_plot} and its receivers', fontsize=20)
+    f'Midpoints of last shot and its receivers', fontsize=20)
+
 plt.xlim(0, 14000)
 plt.ylim(0, 10000)
 plt.xlabel('x1, m', fontsize=15)
@@ -305,7 +310,7 @@ midpoints_of_last_shot[:5]
 ax = midpoints_of_last_shot.plot(figsize=(12, 12), markersize=2, legend=True)
 plt.grid()
 plt.title(
-    f'Midpoints of last shot and its receivers', fontsize=20)
+    f'Midpoints of first shot and its receivers', fontsize=20)
 plt.xlim(0, 14000)
 plt.ylim(0, 10000)
 plt.xlabel('x1, m', fontsize=15)
